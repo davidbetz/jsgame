@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Simple Game</title>
+</head>
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/underscore-min.js"></script>
+<body>
+<canvas id="body" width="900" height="500"></canvas>
+<script>
+$(function() {
+	window._board = [
+"********************",
+"*# *%  *           *",
+"*  *   *    *****  *",
+"*  *        *      *",
+"*  *   ******   ****",
+"*  *   *           *",
+"*  *************   *",
+"*         *        *",
+"*^        |        *",
+"********************"
+];
+	var debug = false;
+	var $canvas = $('#body');
+	var canvas = $canvas[0]
+	var size = 40;
+	var rect = function(x, y, c) {
+		var X = x * size;
+		var Y = y * size;
+		var ctx = canvas.getContext('2d');
+		ctx.fillStyle = c;
+		ctx.fillRect(X, Y, size, size);
+		if(debug) {
+			ctx.font = '8pt sans-serif';
+			ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
+		}
+	};
+	var wall = function(x, y) {
+		rect(x, y, 'red');
+	};
+	var open = function(x, y) {
+		rect(x, y, 'white');
+	};
+	var door = function(x, y) {
+		rect(x, y, 'blue');
+	};
+	var goal = function(x, y) {
+		rect(x, y, 'grey');
+	};
+	var key = function(x, y) {
+		rect(x, y, 'purple');
+	};
+	var toon = function(x, y) {
+		rect(x, y, 'yellow');
+	};
+	var valid = function(x, y) {
+		var c = window._board[y][x];
+		switch(c) {
+			case '*':
+				return false;
+			case '|':
+				if(toonData.keys > 0) {
+					toonData.keys--;
+					window._board[y] = replaceAt(window._board[y], x, ' ');
+					console.log('Door open.');
+					console.log('Keys: ' + toonData.keys);
+					return true;
+				}
+				return false;
+			default:
+				return true;
+		}
+	}
+	var replaceAt = function(str, index, c) {
+		return str.substring(0, index) + c  + str.substring(index + c.length);
+	};
+	var object = function(x, y) {
+		if(window._board[y][x] == '^') {
+			toonData.keys++;
+			console.log('Keys: ' + toonData.keys);
+			window._board[y] = replaceAt(window._board[y], x, ' ');
+		}
+	}
+	var finished = function(x, y) {
+		if(window._board[y][x] == '%') {
+			return function() { alert('you win!'); };
+		}
+		return null;
+	}
+	$(document).keydown(function(e) {
+		switch(e.which) {
+			case 37:
+				if(valid(toonData.x - 1, toonData.y)) {
+					toonData.x--;
+				}
+				break;
+			case 38:
+				if(valid(toonData.x, toonData.y - 1)) {
+					toonData.y--;
+				}
+				break;
+			case 40:
+				if(valid(toonData.x, toonData.y + 1)) {
+					toonData.y++;
+				}
+				break;
+			case 39:
+				if(valid(toonData.x + 1, toonData.y)) {
+					toonData.x++;
+				}
+				break;
+			default:
+				return;
+		}
+		object(toonData.x, toonData.y);
+		var cb = finished(toonData.x, toonData.y);
+		e.preventDefault();
+		redraw();
+		if(cb) {
+			cb();
+		}
+	});
+	var toonData = { keys: 0 };
+	var redraw = function(initial) {
+		var ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		for(var y=0; y < window._board.length; y++) {
+			var row = window._board[y];
+			for(var x=0; x < row.length; x++) {
+				var cell = row[x];
+				var draw;
+				switch(cell) {
+					case '*':
+						draw = wall;
+						break;
+					case '#':
+						if(initial === true) {
+							draw = toon;
+							toonData.x = x;
+							toonData.y = y;
+						}
+						else {
+							draw = open;
+						}
+						break;
+					case '|':
+						draw = door;
+						break;
+					case '%':
+						draw = goal;
+						break;
+					case '^':
+						draw = key;
+						break;
+					default:
+						draw = open;
+						break;
+				}
+				draw(x, y);
+			}
+		}
+		if(!initial) {
+			toon(toonData.x, toonData.y);
+		}
+	};
+	redraw(true);
+});
+</script>
+</body>
+</html>
