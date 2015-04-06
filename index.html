@@ -9,7 +9,7 @@
 <canvas id="body" width="900" height="500"></canvas>
 <script>
 $(function() {
-	window._board = [
+    window._board = [
 "********************",
 "*& #%  #           *",
 "*  #   #    #####  *",
@@ -21,140 +21,140 @@ $(function() {
 "*         ]        *",
 "********************"
 ];
-	var items = [
-		{ name: 'border', symbol: '*', color: 'black' },
-		{ name: 'wall', symbol: '#', color: 'brown' },
-		{ name: 'open', symbol: ' ', color: 'white' },
-		{ name: 'door', symbol: ']', color: 'blue' },
-		{ name: 'goal', symbol: '%', color: 'gold' },
-		{ name: 'key', symbol: '[', color: 'silver' },
-		{ name: 'toon', symbol: '&', color: 'yellow' },
-	];
-	var debug = false;
-	var size = 40;
+    var items = [
+        { name: 'border', symbol: '*', color: 'black' },
+        { name: 'wall', symbol: '#', color: 'brown' },
+        { name: 'open', symbol: ' ', color: 'white' },
+        { name: 'door', symbol: ']', color: 'blue' },
+        { name: 'goal', symbol: '%', color: 'gold' },
+        { name: 'key', symbol: '[', color: 'silver' },
+        { name: 'toon', symbol: '&', color: 'yellow' },
+    ];
+    var debug = false;
+    var size = 40;
 
-	var $canvas = $('#body');
-	var canvas = $canvas[0]
-	var draw = function(ctx, x, y, obj) {
-		var X = x * size;
-		var Y = y * size;
-		ctx.fillStyle = obj.color;
-		ctx.fillRect(X, Y, size, size);
-		if(debug) {
-			ctx.font = '8pt sans-serif';
-			ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
-		}
-	};
-	var obj = function(symbol) {
-		return _.find(items, function(p) { return p.symbol == symbol; }) || {};
-	};
-	var symbol = function(name) {
-		return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
-	};
-	var valid = function(x, y) {
-		var c = window._board[y][x];
-		switch(c) {
-			case symbol('border'):
-			case symbol('wall'):
-				return false;
-			case symbol('door'):
-				if(toonData.keys > 0) {
-					toonData.keys--;
-					window._board[y] = _replaceAt(window._board[y], x, symbol('open'));
-					console.log('Door open.');
-					console.log('Keys: ' + toonData.keys);
-					return true;
-				}
-				return false;
-			default:
-				return true;
-		}
-	}
-	var _replaceAt = function(str, index, c) {
-		return str.substring(0, index) + c  + str.substring(index + c.length);
-	};
-	var object = function(x, y) {
-		if(window._board[y][x] == symbol('key')) {
-			toonData.keys++;
-			console.log('Keys: ' + toonData.keys);
-			window._board[y] = _replaceAt(window._board[y], x, ' ');
-		}
-		else if(window._board[y][x] == symbol('goal')) {
-			return function() { alert('Finished!'); };
-		}
-		return null;
-	}
-	var adjust = function(x, y, c) {
-		window._board[y] = _replaceAt(window._board[y], x, c);
-	};
-	$(document).keydown(function(e) {
-		window._existing = window._board.slice();
-		if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-			adjust(toonData.x, toonData.y, symbol('open'));
-		}
-		switch(e.which) {
-			case 37:
-				if(valid(toonData.x - 1, toonData.y)) {
-					toonData.x--;
-				}
-				break;
-			case 38:
-				if(valid(toonData.x, toonData.y - 1)) {
-					toonData.y--;
-				}
-				break;
-			case 40:
-				if(valid(toonData.x, toonData.y + 1)) {
-					toonData.y++;
-				}
-				break;
-			case 39:
-				if(valid(toonData.x + 1, toonData.y)) {
-					toonData.x++;
-				}
-				break;
-			default:
-				return;
-		}
-		var cb = object(toonData.x, toonData.y);
-		if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-			adjust(toonData.x, toonData.y, symbol('toon'));
-		}
-		if(debug) {
-			console.log('(' + toonData.x + ', ' + toonData.y + ')');
-		}
-		e.preventDefault();
-		update();
-		if(cb) {
-			cb();
-		}
-	});
-	var initialToon = function(x, y) {
-		toonData.x = x;
-		toonData.y = y;
-	}
-	var toonData = { keys: 0 };
-	var update = function(initial) {
-		var ctx = canvas.getContext('2d');
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var $canvas = $('#body');
+    var canvas = $canvas[0]
+    var draw = function(ctx, x, y, obj) {
+        var X = x * size;
+        var Y = y * size;
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(X, Y, size, size);
+        if(debug) {
+            ctx.font = '8pt sans-serif';
+            ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
+        }
+    };
+    var obj = function(symbol) {
+        return _.find(items, function(p) { return p.symbol == symbol; }) || {};
+    };
+    var symbol = function(name) {
+        return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
+    };
+    var valid = function(x, y) {
+        var c = window._board[y][x];
+        switch(c) {
+            case symbol('border'):
+            case symbol('wall'):
+                return false;
+            case symbol('door'):
+                if(toonData.keys > 0) {
+                    toonData.keys--;
+                    window._board[y] = _replaceAt(window._board[y], x, symbol('open'));
+                    console.log('Door open.');
+                    console.log('Keys: ' + toonData.keys);
+                    return true;
+                }
+                return false;
+            default:
+                return true;
+        }
+    }
+    var _replaceAt = function(str, index, c) {
+        return str.substring(0, index) + c  + str.substring(index + c.length);
+    };
+    var object = function(x, y) {
+        if(window._board[y][x] == symbol('key')) {
+            toonData.keys++;
+            console.log('Keys: ' + toonData.keys);
+            window._board[y] = _replaceAt(window._board[y], x, ' ');
+        }
+        else if(window._board[y][x] == symbol('goal')) {
+            return function() { alert('Finished!'); };
+        }
+        return null;
+    }
+    var adjust = function(x, y, c) {
+        window._board[y] = _replaceAt(window._board[y], x, c);
+    };
+    $(document).keydown(function(e) {
+        window._existing = window._board.slice();
+        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
+            adjust(toonData.x, toonData.y, symbol('open'));
+        }
+        switch(e.which) {
+            case 37:
+                if(valid(toonData.x - 1, toonData.y)) {
+                    toonData.x--;
+                }
+                break;
+            case 38:
+                if(valid(toonData.x, toonData.y - 1)) {
+                    toonData.y--;
+                }
+                break;
+            case 40:
+                if(valid(toonData.x, toonData.y + 1)) {
+                    toonData.y++;
+                }
+                break;
+            case 39:
+                if(valid(toonData.x + 1, toonData.y)) {
+                    toonData.x++;
+                }
+                break;
+            default:
+                return;
+        }
+        var cb = object(toonData.x, toonData.y);
+        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
+            adjust(toonData.x, toonData.y, symbol('toon'));
+        }
+        if(debug) {
+            console.log('(' + toonData.x + ', ' + toonData.y + ')');
+        }
+        e.preventDefault();
+        update();
+        if(cb) {
+            cb();
+        }
+    });
+    var initialToon = function(x, y) {
+        toonData.x = x;
+        toonData.y = y;
+    }
+    var toonData = { keys: 0 };
+    var update = function(initial) {
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		for(var y=0; y < window._board.length; y++) {
-			var row = window._board[y];
-			for(var x=0; x < row.length; x++) {
-				var cell = row[x];
-				
-				if(cell == symbol('toon') && initial === true) {
-					initialToon(x, y);
-				}
+        for(var y=0; y < window._board.length; y++) {
+            var row = window._board[y];
+            for(var x=0; x < row.length; x++) {
+                var cell = row[x];
+                
+                if(cell == symbol('toon') && initial === true) {
+                    initialToon(x, y);
+                }
 
-				draw(ctx, x, y, obj(cell));
-			}
-		}
-		if(!initial) {
-			//toon(toonData.x, toonData.y);
-		}
-	};
-	update(true);
+                draw(ctx, x, y, obj(cell));
+            }
+        }
+        if(!initial) {
+            //toon(toonData.x, toonData.y);
+        }
+    };
+    update(true);
 });
 </script>
 </body>
