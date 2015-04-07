@@ -12,107 +12,125 @@ $(function() {
     var $canvas = $('<canvas />');
     $('body').append($canvas);
     var resize = function(initial) {
-       $canvas.attr('width', window.innerWidth)
+       $canvas
+            .attr('width', window.innerWidth)
             .attr('height', window.innerHeight)
         update(initial);
     };
     $(window).resize(resize);
-    window._board = [
-"********************",
-"*& #^ #            *",
-"*  #  #     #####  *",
-"*  #        #   ]  *",
-"*  ##########   ###*",
-"*    [##[          *",
-"*  #############   *",
-"*         #        *",
-"*         ]        *",
-"******** ***********",
-"*3 #               *",
-"*  #        #####  *",
-"*  ]        #      *",
-"*  ##########   ###*",
-"*  #[              *",
-"*  ############]###*",
-"*      #^[#   #    *",
-"*     ^#    #      *",
-"********************"
-];
+    window._board = {
+        req: 3,
+        layout: [
+            "**k*****************",
+            "*& #^ #            *",
+            "*  #  #     #####  *",
+            "*  #        #   ]  *",
+            "*  ##########   ###*",
+            "*    [##[          *",
+            "*  #############   *",
+            "*         #        *",
+            "*         ]        *",
+            "******** ***********",
+            "*0 #               *",
+            "*  #        #####  *",
+            "*  ]        #      *",
+            "*  ##########   ###*",
+            "*  #[              *",
+            "*  ############]###*",
+            "*      #^[#   #    *",
+            "*     ^#    #      *",
+            "********************"
+        ],
+        obj: function(symbol) {
+            return _.find(items, function(p) { return p.symbol == symbol; }) || {};
+        },
+        symbol: function(name) {
+            return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
+        },
+        updateCell: function(x ,y, name) {
+            window._board.layout[y] = window._board._replaceAt(window._board.layout[y], x, name);
+        },
+        _replaceAt: function(str, index, c) {
+            return str.substring(0, index) + c  + str.substring(index + c.length);
+        }
+    };
     var items = [
         { name: 'border', symbol: '*', color: 'black' },
         { name: 'wall', symbol: '#', color: 'brown' },
         { name: 'open', symbol: ' ', color: 'white' },
         { name: 'door', symbol: ']', color: 'blue' },
         { name: 'goal', symbol: '0', color: 'purple' },
+        { name: 'key_label', symbol: 'k', color: 'silver' },
         { name: 'key', symbol: '[', color: 'silver', item: true },
         { name: 'gold', symbol: '^', color: 'gold', item: true },
         { name: 'toon', symbol: '&', color: 'yellow' },
     ];
+    window.render = {
+        smallFont: '8pt sans-serif',
+        normalFont: '20pt sans-serif',
+        circle: function(ctx, x, y, color) {
+            ctx.beginPath();
+            ctx.arc(x + (size / 2), y + (size / 2), size / 2, 0, 2 * Math.PI, false);
+            ctx.fillStyle = color;
+            ctx.fill();
+        },
+        rect: function(ctx, x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        },
+        text: function(ctx, text, font, x, y, color) {
+            ctx.font = font;
+            ctx.strokeStyle = color;
+            ctx.strokeText(text, x, y);
+        },
+        draw: function(ctx, x, y, object, s) {
+            var X = x * size;
+            var Y = y * size;
+
+            if(debug) {
+                render.text(ctx, '(' + x + ', ' + y + ')', render.smallFont, X, Y, 'black');
+            }
+            if(object.symbol == _board.symbol('gold')) {
+                render.circle(ctx, X, Y, object.color);
+            }
+            else if(object.symbol == _board.symbol('key_label')) {
+                render.rect(ctx, X, Y, 'black');
+                render.text(ctx, toonData.key, render.normalFont, X + 13, Y + size - 10, 'white');
+            }
+            else if(object.symbol == _board.symbol('toon')) {
+                render.rect(ctx, X, Y, object.color);
+                render.text(ctx, toonData.gold, render.normalFont, X + 13, Y + size - 10, 'black');
+            }
+            else if(object.symbol == _board.symbol('goal')) {
+                render.rect(ctx, X, Y, object.color);
+                render.text(ctx, window._board.req, render.normalFont, X + 13, Y + size - 10, 'white');
+            }
+            else if(object.symbol == _board.symbol('key')) {
+                render.circle(ctx, X, Y, object.color);
+            }
+            else {
+                render.rect(ctx, X, Y, object.color);
+            }
+        }
+    };
     var debug = false;
     var size = 40;
     var complete = false;
     var canvas = $canvas[0]
-    var circle = function(ctx, x, y, color) {
-        ctx.beginPath();
-        ctx.arc(x + (size / 2), y + (size / 2), size / 2, 0, 2 * Math.PI, false);
-        ctx.fillStyle = color;
-        ctx.fill();
-    }
-    var rect = function(ctx, x, y, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, size, size);
-    }
-    var draw = function(ctx, x, y, obj, s) {
-        var X = x * size;
-        var Y = y * size;
-
-        if(debug) {
-            ctx.font = '8pt sans-serif';
-            ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
-        }
-        ctx.font = '20pt sans-serif';
-        if(obj.symbol == symbol('gold')) {
-            circle(ctx, X, Y, obj.color);
-        }
-        else if(obj.symbol == symbol('toon')) {
-            rect(ctx, X, Y, obj.color);
-            ctx.strokeText(toonData.gold, X + 13, Y + size - 10);
-        }
-        else if(obj.symbol == symbol('goal')) {
-            rect(ctx, X, Y, obj.color);
-            ctx.strokeText(toonData.req, X + 13, Y + size - 10);
-        }
-        else if(obj.symbol == symbol('key')) {
-            circle(ctx, X, Y, obj.color);
-        }
-        else {
-            rect(ctx, X, Y, obj.color);
-        }
-    };
-    var obj = function(symbol) {
-        var found = symbol.match(/([0-9])+/);
-        if(found) {
-            symbol = '0';
-        }
-        return _.find(items, function(p) { return p.symbol == symbol; }) || {};
-    };
-    var symbol = function(name) {
-        return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
-    };
     var valid = function(x, y) {
-        var c = window._board[y][x];
+        var c = window._board.layout[y][x];
         var found = c.match(/([0-9])+/);
         if(found) {
             return toonData.gold >= toonData.req;
         }
         switch(c) {
-            case symbol('border'):
-            case symbol('wall'):
+            case _board.symbol('border'):
+            case _board.symbol('wall'):
                 return false;
-            case symbol('door'):
+            case _board.symbol('door'):
                 if(toonData['key'] > 0) {
                     toonData['key']--;
-                    window._board[y] = _replaceAt(window._board[y], x, symbol('open'));
+                    window._board.updateCell(x, y, _board.symbol('open'));
                     console.log('Door open.');
                     console.log('Keys: ' + toonData['key']);
                     return true;
@@ -122,21 +140,18 @@ $(function() {
                 return true;
         }
     }
-    var _replaceAt = function(str, index, c) {
-        return str.substring(0, index) + c  + str.substring(index + c.length);
-    };
-    var object = function(x, y) {
-        var o = obj(window._board[y][x]);
+    var handleObject = function(x, y) {
+        var o = window._board.obj(window._board.layout[y][x]);
         if(o.item) {
             if(!toonData[o.name]) {
                 toonData[o.name] = 0;
             }
             toonData[o.name]++;
             console.log('Inventory: ' + o.name + ' : ' + toonData[o.name]);
-            window._board[y] = _replaceAt(window._board[y], x, ' ');
+            window._board.updateCell(x, y, _board.symbol('open'));
         }
         else {            
-            var found = window._board[y][x].match(/([0-9])+/);
+            var found = window._board.layout[y][x].match(/([0-9])+/);
             if(found) {
                 if(toonData.gold >= toonData.req) {
                     return function() {
@@ -148,16 +163,13 @@ $(function() {
         }
         return null;
     }
-    var adjust = function(x, y, c) {
-        window._board[y] = _replaceAt(window._board[y], x, c);
-    };
     $(document).keydown(function(e) {
         if(complete) {
             return;
         }
-        window._existing = window._board.slice();
+        window._existing = window._board.layout.slice();
         if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-            adjust(toonData.x, toonData.y, symbol('open'));
+            window._board.updateCell(toonData.x, toonData.y, _board.symbol('open'));
         }
         switch(e.which) {
             case 37:
@@ -183,9 +195,9 @@ $(function() {
             default:
                 return;
         }
-        var cb = object(toonData.x, toonData.y);
+        var cb = handleObject(toonData.x, toonData.y);
         if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-            adjust(toonData.x, toonData.y, symbol('toon'));
+            window._board.updateCell(toonData.x, toonData.y, _board.symbol('toon'));
         }
         if(debug) {
             console.log('(' + toonData.x + ', ' + toonData.y + ')');
@@ -196,42 +208,30 @@ $(function() {
             cb();
         }
     });
-    var initialToon = function(x, y) {
-        toonData.x = x;
-        toonData.y = y;
-    }
     var toonData = { 
         gold: 0, 
         key: 0,
-        req: 0
+        req: 0,
+        init: function(x, y) {
+            toonData.x = x;
+            toonData.y = y;
+        }
     };
     var update = function(initial) {
         var ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        for(var y=0; y < window._board.length; y++) {
-            var row = window._board[y];
+        for(var y=0; y < window._board.layout.length; y++) {
+            var row = window._board.layout[y];
             for(var x=0; x < row.length; x++) {
                 var cell = row[x];
                 
-                if(cell == symbol('toon') && initial === true) {
-                    initialToon(x, y);
+                if(cell == _board.symbol('toon') && initial === true) {
+                    toonData.init(x, y);
                 }
 
-                var found = cell.match(/([0-9])+/);
-                if(!toonData.req && found) {
-                    toonData.req = parseInt(found[0]);
-                }
-    
-                if(cell == symbol('toon') && initial === true) {
-                    initialToon(x, y);
-                }
-
-                draw(ctx, x, y, obj(cell));
+                render.draw(ctx, x, y, window._board.obj(cell));
             }
-        }
-        if(!initial) {
-            //toon(toonData.x, toonData.y);
         }
     };
     resize(true);
