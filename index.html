@@ -30,9 +30,9 @@ $(function() {
 "******** ***********",
 "*3 #               *",
 "*  #        #####  *",
-"*  ]        #   [  *",
+"*  ]        #      *",
 "*  ##########   ###*",
-"*  #        #      *",
+"*  #[              *",
 "*  ############]###*",
 "*      #^[#   #    *",
 "*     ^#    #      *",
@@ -52,21 +52,41 @@ $(function() {
     var size = 40;
     var complete = false;
     var canvas = $canvas[0]
+    var circle = function(ctx, x, y, color) {
+        ctx.beginPath();
+        ctx.arc(x + (size / 2), y + (size / 2), size / 2, 0, 2 * Math.PI, false);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+    var rect = function(ctx, x, y, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, size, size);
+    }
     var draw = function(ctx, x, y, obj, s) {
         var X = x * size;
         var Y = y * size;
-        ctx.fillStyle = obj.color;
-        ctx.fillRect(X, Y, size, size);
+
         if(debug) {
             ctx.font = '8pt sans-serif';
             ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
         }
         ctx.font = '20pt sans-serif';
-        if(obj.symbol == '&') {
-            ctx.strokeText(toonData.gold, X + 10, Y + size - 10);
+        if(obj.symbol == symbol('gold')) {
+            circle(ctx, X, Y, obj.color);
         }
-        else if(obj.symbol == '0') {
-            ctx.strokeText(toonData.req, X + 10, Y + size - 10);
+        else if(obj.symbol == symbol('toon')) {
+            rect(ctx, X, Y, obj.color);
+            ctx.strokeText(toonData.gold, X + 13, Y + size - 10);
+        }
+        else if(obj.symbol == symbol('goal')) {
+            rect(ctx, X, Y, obj.color);
+            ctx.strokeText(toonData.req, X + 13, Y + size - 10);
+        }
+        else if(obj.symbol == symbol('key')) {
+            circle(ctx, X, Y, obj.color);
+        }
+        else {
+            rect(ctx, X, Y, obj.color);
         }
     };
     var obj = function(symbol) {
