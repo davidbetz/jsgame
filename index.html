@@ -2,43 +2,52 @@
 <html lang="en">
 <head>
 <title>Simple Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <script src="./js/jquery-1.11.2.min.js"></script>
 <script src="./js/underscore-min.js"></script>
+<script src="./js/jquery.mobile.custom.min.js"></script>
+<style>
+body {
+    background-color: #fff;
+    padding: 0;
+    margin: 0;
+}
+canvas {
+    background-color: #fff;
+}
+</style>
 <body>
 <script>
 $(function() {
     "use strict";
+    var debug = false;
+    var size = 40;
+    var complete = false;
     var $canvas = $('<canvas />');
     $('body').append($canvas);
-    var resize = function(initial) {
-       $canvas
-            .attr('width', window.innerWidth)
-            .attr('height', window.innerHeight)
-        update(initial);
-    };
-    $(window).resize(resize);
+    var canvas = $canvas[0];
     window._board = {
         req: 3,
         layout: [
-            "**k*****************",
-            "*& #^ #            *",
-            "*  #  #     #####  *",
-            "*  #        #   ]  *",
-            "*  ##########   ###*",
-            "*    [##[          *",
-            "*  #############   *",
-            "*         #        *",
-            "*         ]        *",
+            "**k*f***************",
+            "*& #^[#            *",
+            "*  # d#     ##### d*",
+            "*  #        #   ] d*",
+            "*  ###]######   ###*",
+            "*  d[#]#[[dd       *",
+            "*  ###]#########   *",
+            "*         #       d*",
+            "*        d        [*",
             "******** ***********",
-            "*0 #               *",
-            "*  #        #####  *",
-            "*  ]        #      *",
-            "*  ##########   ###*",
-            "*  #[              *",
-            "*  ############]###*",
-            "*      #^[#   #    *",
-            "*     ^#    #      *",
+            "*   #            d *",
+            "* # #       #####  *",
+            "* # ]      d#     [*",
+            "* # #########   ###*",
+            "*0# #             d*",
+            "*## #[dd#######]###*",
+            "*   #####^#[ d#   d*",
+            "*   d ^]    #     [*",
             "********************"
         ],
         obj: function(symbol) {
@@ -48,7 +57,7 @@ $(function() {
             return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
         },
         updateCell: function(x ,y, name) {
-            window._board.layout[y] = window._board._replaceAt(window._board.layout[y], x, name);
+            _board.layout[y] = _board._replaceAt(_board.layout[y], x, name);
         },
         _replaceAt: function(str, index, c) {
             return str.substring(0, index) + c  + str.substring(index + c.length);
@@ -60,14 +69,16 @@ $(function() {
         { name: 'open', symbol: ' ', color: 'white' },
         { name: 'door', symbol: ']', color: 'blue' },
         { name: 'goal', symbol: '0', color: 'purple' },
-        { name: 'key_label', symbol: 'k', color: 'silver' },
+        { name: 'energy', symbol: 'd', color: 'orange', increment: 10, item: true },
         { name: 'key', symbol: '[', color: 'silver', item: true },
         { name: 'gold', symbol: '^', color: 'gold', item: true },
+        { name: 'key_label', tracks: '[', symbol: 'k', color: 'silver', label: true },
+        { name: 'energy_label', tracks: 'd', symbol: 'f', color: 'orange', label: true },
         { name: 'toon', symbol: '&', color: 'yellow' },
     ];
     window.render = {
-        smallFont: '8pt sans-serif',
-        normalFont: '20pt sans-serif',
+        smallFont: Math.floor(size / 3) + 'pt sans-serif',
+        normalFont: (size / 2) + 'pt sans-serif',
         circle: function(ctx, x, y, color) {
             ctx.beginPath();
             ctx.arc(x + (size / 2), y + (size / 2), size / 2, 0, 2 * Math.PI, false);
@@ -86,26 +97,22 @@ $(function() {
         draw: function(ctx, x, y, object, s) {
             var X = x * size;
             var Y = y * size;
-
             if(debug) {
                 render.text(ctx, '(' + x + ', ' + y + ')', render.smallFont, X, Y, 'black');
             }
-            if(object.symbol == _board.symbol('gold')) {
-                render.circle(ctx, X, Y, object.color);
-            }
-            else if(object.symbol == _board.symbol('key_label')) {
+            if(object.label) {
                 render.rect(ctx, X, Y, 'black');
-                render.text(ctx, toonData.key, render.normalFont, X + 13, Y + size - 10, 'white');
+                render.text(ctx, toonData[_board.obj(object.tracks).name], render.normalFont, X + 13, Y + size - 10, object.color);
             }
-            else if(object.symbol == _board.symbol('toon')) {
+            else if(object.symbol == _board.symbol('toon')){
                 render.rect(ctx, X, Y, object.color);
-                render.text(ctx, toonData.gold, render.normalFont, X + 13, Y + size - 10, 'black');
+                render.text(ctx, toonData['gold'], render.normalFont, X + 13, Y + size - 10, 'black');
             }
-            else if(object.symbol == _board.symbol('goal')) {
+            else if(object.symbol == _board.symbol('goal')){
                 render.rect(ctx, X, Y, object.color);
-                render.text(ctx, window._board.req, render.normalFont, X + 13, Y + size - 10, 'white');
+                render.text(ctx, _board.req, render.normalFont, X + 13, Y + size - 10, 'black');
             }
-            else if(object.symbol == _board.symbol('key')) {
+            else if(object.item) {
                 render.circle(ctx, X, Y, object.color);
             }
             else {
@@ -113,24 +120,18 @@ $(function() {
             }
         }
     };
-    var debug = false;
-    var size = 40;
-    var complete = false;
-    var canvas = $canvas[0]
     var valid = function(x, y) {
-        var c = window._board.layout[y][x];
-        var found = c.match(/([0-9])+/);
-        if(found) {
-            return toonData.gold >= toonData.req;
-        }
+        var c = _board.layout[y][x];
         switch(c) {
+            case _board.symbol('goal'):
+                return toonData.gold >= _board.req;
             case _board.symbol('border'):
             case _board.symbol('wall'):
                 return false;
             case _board.symbol('door'):
                 if(toonData['key'] > 0) {
                     toonData['key']--;
-                    window._board.updateCell(x, y, _board.symbol('open'));
+                    _board.updateCell(x, y, _board.symbol('open'));
                     console.log('Door open.');
                     console.log('Keys: ' + toonData['key']);
                     return true;
@@ -141,100 +142,183 @@ $(function() {
         }
     }
     var handleObject = function(x, y) {
-        var o = window._board.obj(window._board.layout[y][x]);
+        var o = _board.obj(_board.layout[y][x]);
         if(o.item) {
             if(!toonData[o.name]) {
                 toonData[o.name] = 0;
             }
-            toonData[o.name]++;
+            var item = _board.obj(o.symbol);
+            toonData[o.name] += item.increment || 1;
             console.log('Inventory: ' + o.name + ' : ' + toonData[o.name]);
-            window._board.updateCell(x, y, _board.symbol('open'));
+            _board.updateCell(x, y, _board.symbol('open'));
         }
-        else {            
-            var found = window._board.layout[y][x].match(/([0-9])+/);
-            if(found) {
-                if(toonData.gold >= toonData.req) {
-                    return function() {
-                        complete = true;
-                        alert('Finished!');
-                    };
-                }
+        else if (o.symbol == _board.symbol('goal')) {
+            if(toonData.gold >= _board.req) {
+                return function() {
+                    complete = true;
+                    alert('Finished!');
+                };
             }
         }
         return null;
     }
+    $canvas.tap(function(e) {
+        var x = Math.floor(e.pageX / size);
+        var y = Math.floor(e.pageY / size);
+        var area = 2;
+        var direction;
+        if(x > toonData.x && Math.abs(toonData.y - y) < area) {
+            direction = 'right';
+        }
+        else if(x < toonData.x && Math.abs(toonData.y - y) < area) {
+            direction = 'left';
+        }
+        if(y > toonData.y && Math.abs(toonData.x - x) < area) {
+            direction = 'down';
+        }
+        else if(y < toonData.y && Math.abs(toonData.x - x) < area) {
+            direction = 'up';
+        }
+        if(direction) {
+            handleMove(direction);
+        }
+    });
     $(document).keydown(function(e) {
+        var moved;
+        switch(e.which) {
+            case 37:
+                handleMove('left');
+                moved = true;
+                break;
+            case 38:
+                handleMove('up');
+                moved = true;
+                break;
+            case 39:
+                handleMove('right');
+                moved = true;
+                break;
+            case 40:
+                handleMove('down');
+                moved = true;
+                break;
+        }
+        if(moved) {
+            e.preventDefault();
+        }
+    })
+    var handleMove = function(direction) {
         if(complete) {
             return;
         }
-        window._existing = window._board.layout.slice();
-        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-            window._board.updateCell(toonData.x, toonData.y, _board.symbol('open'));
+        window._existing = _board.layout.slice();
+        if(direction == 'left' || direction == 'up' || direction == 'right' || direction == 'down') {
+            _board.updateCell(toonData.x, toonData.y, _board.symbol('open'));
         }
-        switch(e.which) {
-            case 37:
+        var moved = false;
+        switch(direction) {
+            case 'left':
                 if(valid(toonData.x - 1, toonData.y)) {
                     toonData.x--;
+                    moved = true;
                 }
                 break;
-            case 38:
+            case 'up':
                 if(valid(toonData.x, toonData.y - 1)) {
                     toonData.y--;
+                    moved = true;
                 }
                 break;
-            case 40:
-                if(valid(toonData.x, toonData.y + 1)) {
-                    toonData.y++;
-                }
-                break;
-            case 39:
+            case 'right':
                 if(valid(toonData.x + 1, toonData.y)) {
                     toonData.x++;
+                    moved = true;
+                }
+                break;
+            case 'down':
+                if(valid(toonData.x, toonData.y + 1)) {
+                    toonData.y++;
+                    moved = true;
                 }
                 break;
             default:
                 return;
         }
-        var cb = handleObject(toonData.x, toonData.y);
-        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
-            window._board.updateCell(toonData.x, toonData.y, _board.symbol('toon'));
+        if(moved) {
+            console.log('Moved ' + direction);
+            var cb = handleObject(toonData.x, toonData.y);
+            toonData['energy']--;
+            if(toonData['energy'] == 0) {
+                cb = function() {
+                    complete = true;
+                    alert('You ran out of energy!');
+                };
+            }
+            if(direction == 'left' || direction == 'up' || direction == 'right' || direction == 'down') {
+                _board.updateCell(toonData.x, toonData.y, _board.symbol('toon'));
+            }
+            if(debug) {
+                console.log('(' + toonData.x + ', ' + toonData.y + ')');
+            }
+            update();
+            if(cb) {
+                cb();
+            }
         }
-        if(debug) {
-            console.log('(' + toonData.x + ', ' + toonData.y + ')');
-        }
-        e.preventDefault();
-        update();
-        if(cb) {
-            cb();
-        }
-    });
-    var toonData = { 
-        gold: 0, 
-        key: 0,
-        req: 0,
+    };
+    var toonData = {
         init: function(x, y) {
             toonData.x = x;
             toonData.y = y;
+             _.chain(items)
+                .filter(function(p) { return p.item; })
+                .each(function(p) { toonData[p.name] = 0; });
+            toonData['energy'] = _board.obj(_board.symbol('energy')).increment;
         }
     };
     var update = function(initial) {
         var ctx = canvas.getContext('2d');
+        var delayRender = [];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        for(var y=0; y < window._board.layout.length; y++) {
-            var row = window._board.layout[y];
-            for(var x=0; x < row.length; x++) {
+        for(var y = 0; y < _board.layout.length; y++) {
+            var row = _board.layout[y];
+            for(var x = 0; x < row.length; x++) {
                 var cell = row[x];
-                
-                if(cell == _board.symbol('toon') && initial === true) {
-                    toonData.init(x, y);
-                }
 
-                render.draw(ctx, x, y, window._board.obj(cell));
+                if(_board.obj(cell).label) {
+                    delayRender.push({
+                        ctx: ctx, x: x, y: y, obj: _board.obj(cell)
+                    });
+                }
+                else {
+                    render.draw(ctx, x, y, _board.obj(cell));
+                }
             }
         }
+        _.each(delayRender, function(p) {
+            render.draw(p.ctx, p.x, p.y, p.obj);
+        });
     };
-    resize(true);
+
+    for(var y = 0; y < _board.layout.length; y++) {
+        var row = _board.layout[y];
+        for(var x = 0; x < row.length; x++) {
+            var cell = row[x];
+            
+            if(cell == _board.symbol('toon')) {
+                toonData.init(x, y);
+            }
+        }
+    }
+
+    var width = (_board.layout.length + 1) * size;
+    var height = (_board.layout[0].length - 1) * size;
+    $canvas
+        .attr('width', width)
+        .attr('height', height);
+        
+    update();
 });
 </script>
 </body>
