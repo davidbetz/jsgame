@@ -91,7 +91,7 @@ $(function() {
                 return false;
             case symbol('door'):
                 if(toonData['key'] > 0) {
-                    toonData['key'];
+                    toonData['key']--;
                     window._board[y] = _replaceAt(window._board[y], x, symbol('open'));
                     console.log('Door open.');
                     console.log('Keys: ' + toonData['key']);
