@@ -1,0 +1,222 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<title>Simple Game</title>
+</head>
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/underscore-min.js"></script>
+<body>
+<script>
+$(function() {
+    "use strict";
+    var $canvas = $('<canvas />');
+    $('body').append($canvas);
+    var resize = function(initial) {
+       $canvas.attr('width', window.innerWidth)
+            .attr('height', window.innerHeight)
+        update(initial);
+    };
+    $(window).resize(resize);
+    window._board = [
+"********************",
+"*& #^ #            *",
+"*  #  #     #####  *",
+"*  #        #   ]  *",
+"*  ##########   ###*",
+"*    [##[          *",
+"*  #############   *",
+"*         #        *",
+"*         ]        *",
+"******** ***********",
+"*3 #               *",
+"*  #        #####  *",
+"*  ]        #   [  *",
+"*  ##########   ###*",
+"*  #        #      *",
+"*  ############]###*",
+"*      #^[#   #    *",
+"*     ^#    #      *",
+"********************"
+];
+    var items = [
+        { name: 'border', symbol: '*', color: 'black' },
+        { name: 'wall', symbol: '#', color: 'brown' },
+        { name: 'open', symbol: ' ', color: 'white' },
+        { name: 'door', symbol: ']', color: 'blue' },
+        { name: 'goal', symbol: '0', color: 'purple' },
+        { name: 'key', symbol: '[', color: 'silver', item: true },
+        { name: 'gold', symbol: '^', color: 'gold', item: true },
+        { name: 'toon', symbol: '&', color: 'yellow' },
+    ];
+    var debug = false;
+    var size = 40;
+    var complete = false;
+    var canvas = $canvas[0]
+    var draw = function(ctx, x, y, obj, s) {
+        var X = x * size;
+        var Y = y * size;
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(X, Y, size, size);
+        if(debug) {
+            ctx.font = '8pt sans-serif';
+            ctx.strokeText('(' + x + ', ' + y + ')', X, Y);
+        }
+        ctx.font = '20pt sans-serif';
+        if(obj.symbol == '&') {
+            ctx.strokeText(toonData.gold, X + 10, Y + size - 10);
+        }
+        else if(obj.symbol == '0') {
+            ctx.strokeText(toonData.req, X + 10, Y + size - 10);
+        }
+    };
+    var obj = function(symbol) {
+        var found = symbol.match(/([0-9])+/);
+        if(found) {
+            symbol = '0';
+        }
+        return _.find(items, function(p) { return p.symbol == symbol; }) || {};
+    };
+    var symbol = function(name) {
+        return (_.find(items, function(p) { return p.name == name; }) || {}).symbol;
+    };
+    var valid = function(x, y) {
+        var c = window._board[y][x];
+        var found = c.match(/([0-9])+/);
+        if(found) {
+            return toonData.gold >= toonData.req;
+        }
+        switch(c) {
+            case symbol('border'):
+            case symbol('wall'):
+                return false;
+            case symbol('door'):
+                if(toonData['key'] > 0) {
+                    toonData['key']--;
+                    window._board[y] = _replaceAt(window._board[y], x, symbol('open'));
+                    console.log('Door open.');
+                    console.log('Keys: ' + toonData['key']);
+                    return true;
+                }
+                return false;
+            default:
+                return true;
+        }
+    }
+    var _replaceAt = function(str, index, c) {
+        return str.substring(0, index) + c  + str.substring(index + c.length);
+    };
+    var object = function(x, y) {
+        var o = obj(window._board[y][x]);
+        if(o.item) {
+            if(!toonData[o.name]) {
+                toonData[o.name] = 0;
+            }
+            toonData[o.name]++;
+            console.log('Inventory: ' + o.name + ' : ' + toonData[o.name]);
+            window._board[y] = _replaceAt(window._board[y], x, ' ');
+        }
+        else {            
+            var found = window._board[y][x].match(/([0-9])+/);
+            if(found) {
+                if(toonData.gold >= toonData.req) {
+                    return function() {
+                        complete = true;
+                        alert('Finished!');
+                    };
+                }
+            }
+        }
+        return null;
+    }
+    var adjust = function(x, y, c) {
+        window._board[y] = _replaceAt(window._board[y], x, c);
+    };
+    $(document).keydown(function(e) {
+        if(complete) {
+            return;
+        }
+        window._existing = window._board.slice();
+        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
+            adjust(toonData.x, toonData.y, symbol('open'));
+        }
+        switch(e.which) {
+            case 37:
+                if(valid(toonData.x - 1, toonData.y)) {
+                    toonData.x--;
+                }
+                break;
+            case 38:
+                if(valid(toonData.x, toonData.y - 1)) {
+                    toonData.y--;
+                }
+                break;
+            case 40:
+                if(valid(toonData.x, toonData.y + 1)) {
+                    toonData.y++;
+                }
+                break;
+            case 39:
+                if(valid(toonData.x + 1, toonData.y)) {
+                    toonData.x++;
+                }
+                break;
+            default:
+                return;
+        }
+        var cb = object(toonData.x, toonData.y);
+        if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40) {
+            adjust(toonData.x, toonData.y, symbol('toon'));
+        }
+        if(debug) {
+            console.log('(' + toonData.x + ', ' + toonData.y + ')');
+        }
+        e.preventDefault();
+        update();
+        if(cb) {
+            cb();
+        }
+    });
+    var initialToon = function(x, y) {
+        toonData.x = x;
+        toonData.y = y;
+    }
+    var toonData = { 
+        gold: 0, 
+        key: 0,
+        req: 0
+    };
+    var update = function(initial) {
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for(var y=0; y < window._board.length; y++) {
+            var row = window._board[y];
+            for(var x=0; x < row.length; x++) {
+                var cell = row[x];
+                
+                if(cell == symbol('toon') && initial === true) {
+                    initialToon(x, y);
+                }
+
+                var found = cell.match(/([0-9])+/);
+                if(!toonData.req && found) {
+                    toonData.req = parseInt(found[0]);
+                }
+    
+                if(cell == symbol('toon') && initial === true) {
+                    initialToon(x, y);
+                }
+
+                draw(ctx, x, y, obj(cell));
+            }
+        }
+        if(!initial) {
+            //toon(toonData.x, toonData.y);
+        }
+    };
+    resize(true);
+});
+</script>
+</body>
+</html>
