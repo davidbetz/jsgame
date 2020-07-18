@@ -29,3 +29,7 @@ You can view the latest version at [http://dbgame01.azurewebsites.net/](http://d
         "*   d ^]    #     [*",
         "********************"
     ]
+
+# Run server
+
+    docker run --name jsgame --rm -dt -p 80:80 -v `pwd`:/usr/share/nginx/html nginx:1.19.1

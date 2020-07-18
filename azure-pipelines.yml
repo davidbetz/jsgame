@@ -1,0 +1,23 @@
+trigger:
+    - master
+    
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    
+    - bash: |
+       cat > metadata.json <<\EOF
+       {
+         "version": $(Build.BuildId)
+       }
+       EOF
+      displayName: 'Bash Script'
+    
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'Visual Studio Enterprise with MSDN(20e08d3d-d5c5-4f76-a454-4a1b216166c6)'
+        appType: 'webApp'
+        WebAppName: 'dbgame01'
+        packageForLinux: '$(System.DefaultWorkingDirectory)'

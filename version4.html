@@ -16,9 +16,6 @@ body {
 canvas {
     background-color: #fff;
 }
-p {
-    font-family: sans-serif;
-}
 </style>
 <body>
 <script>
@@ -50,8 +47,7 @@ $(function() {
     */
 
     "use strict";
-    var debug = true;
-    var debugCoordinates = false;
+    var debug = false;
     var size = 40;
     var complete = false;
     var $canvas = $('<canvas />');
@@ -97,24 +93,18 @@ $(function() {
         { name: 'border', symbol: '*', color: 'black' },
         { name: 'wall', symbol: '#', color: 'brown' },
         { name: 'open', symbol: ' ', color: 'white' },
-        { name: 'door', symbol: ']', color: '#499', text: "\u{1F512}"},
-        { name: 'goal', symbol: '0', color: 'purple', text: "\u{1F6AA}" },
-        { name: 'energy', symbol: 'd', color: 'orange', increment: 10, item: true , text: "\u{1F96A}"},
-        { name: 'key', symbol: '[', color: 'silver', item: true, text: "\u{1F511}" },
-        { name: 'gold', symbol: '^', color: 'gold', item: true, text: '\u{1F4EE}' },
+        { name: 'door', symbol: ']', color: 'blue' },
+        { name: 'goal', symbol: '0', color: 'purple' },
+        { name: 'energy', symbol: 'd', color: 'orange', increment: 10, item: true },
+        { name: 'key', symbol: '[', color: 'silver', item: true },
+        { name: 'gold', symbol: '^', color: 'gold', item: true },
         { name: 'key_label', tracks: '[', symbol: 'k', color: 'silver', label: true },
         { name: 'energy_label', tracks: 'd', symbol: 'f', color: 'orange', label: true },
-        { name: 'toon', symbol: '&', color: 'white', text: "\u{1F9CD}" },
+        { name: 'toon', symbol: '&', color: 'yellow' },
     ];
-
     window.render = {
         smallFont: Math.floor(size / 3) + 'pt sans-serif',
         normalFont: (size / 2) + 'pt sans-serif',
-        unicode: function(ctx, text, font, x, y, color) {
-            ctx.font = Math.floor(size / 3) + 'pt sans-serif';
-            ctx.strokeStyle = color;
-            ctx.strokeText(text, x - 4, y - 4);
-        },
         circle: function(ctx, x, y, color) {
             ctx.beginPath();
             ctx.arc(x + (size / 2), y + (size / 2), size / 2, 0, 2 * Math.PI, false);
@@ -133,27 +123,16 @@ $(function() {
         draw: function(ctx, x, y, object, s) {
             var X = x * size;
             var Y = y * size;
-            if(debugCoordinates === true) {
+            if(debug) {
                 render.text(ctx, '(' + x + ', ' + y + ')', render.smallFont, X, Y, 'black');
             }
             if(object.label) {
                 render.rect(ctx, X, Y, 'black');
                 render.text(ctx, toonData[_board.obj(object.tracks).name], render.normalFont, X + 13, Y + size - 10, object.color);
             }
-            // else if(object.symbol == _board.symbol('toon')){
-            //     render.rect(ctx, X, Y, object.color);
-            //     render.text(ctx, toonData['gold'], render.normalFont, X + 13, Y + size - 10, 'black');
-            // }
-            else if(
-                    object.symbol == _board.symbol('key') || 
-                    object.symbol == _board.symbol('toon') || 
-                    object.symbol == _board.symbol('gold') ||                            
-                    object.symbol == _board.symbol('goal') ||         
-                    object.symbol == _board.symbol('energy') ||         
-                    object.symbol == _board.symbol('door')
-                ){
-                render.circle(ctx, X, Y, object.color);
-                render.unicode(ctx, object.text, render.normalFont, X + 13, Y + size - 10, 'black');
+            else if(object.symbol == _board.symbol('toon')){
+                render.rect(ctx, X, Y, object.color);
+                render.text(ctx, toonData['gold'], render.normalFont, X + 13, Y + size - 10, 'black');
             }
             else if(object.symbol == _board.symbol('goal')){
                 render.rect(ctx, X, Y, object.color);
@@ -179,6 +158,7 @@ $(function() {
                 if(toonData['key'] > 0) {
                     toonData['key']--;
                     _board.updateCell(x, y, _board.symbol('open'));
+                    console.log('Door open.');
                     console.log('Keys: ' + toonData['key']);
                     return true;
                 }
@@ -259,7 +239,6 @@ $(function() {
         }
         window._existing = _board.layout.slice();
         if(direction == 'left' || direction == 'up' || direction == 'right' || direction == 'down') {
-            debugger
             _board.updateCell(toonData.x, toonData.y, _board.symbol('open'));
         }
         var moved = false;
@@ -304,13 +283,10 @@ $(function() {
             if(direction == 'left' || direction == 'up' || direction == 'right' || direction == 'down') {
                 _board.updateCell(toonData.x, toonData.y, _board.symbol('toon'));
             }
-            if(debugCoordinates === true) {
+            if(debug) {
                 console.log('(' + toonData.x + ', ' + toonData.y + ')');
             }
             update();
-            if(debug === true) {
-                console.table(_board.layout)
-            }
             if(cb) {
                 cb();
             }
@@ -335,6 +311,7 @@ $(function() {
             var row = _board.layout[y];
             for(var x = 0; x < row.length; x++) {
                 var cell = row[x];
+
                 if(_board.obj(cell).label) {
                     delayRender.push({
                         ctx: ctx, x: x, y: y, obj: _board.obj(cell)
